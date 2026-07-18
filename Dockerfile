@@ -1,19 +1,22 @@
-# Use a lightweight, official Python runtime as a parent image
+#
+# codequery-web
+# Copyright (C) 2026 ruben2020 https://github.com/ruben2020/
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+
 FROM python:3.11-slim
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy requirements first to leverage Docker's caching mechanism
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application source code
 COPY . .
 
-# Inform Docker that the container listens on port 8000
 EXPOSE 8000
 
-# Run Gunicorn exactly as you would in production
 CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "wsgi:app"]
 
