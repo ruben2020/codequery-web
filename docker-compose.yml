@@ -1,0 +1,28 @@
+services:
+  web:
+    build: .
+    expose:
+      - "8000"
+    volumes:
+      - .:/app:Z 
+    environment:
+      - FLASK_ENV=development
+      - PYTHONPATH=/app
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:Z,U
+      - caddy_data:/data:Z
+      - caddy_config:/config:Z
+    depends_on:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:
+

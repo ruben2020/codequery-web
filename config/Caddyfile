@@ -1,0 +1,7 @@
+:80 {
+    # Route traffic dynamically using Docker's internal DNS resolution
+    reverse_proxy web:8000
+    
+    encode gzip zstd
+}
+
