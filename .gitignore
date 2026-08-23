@@ -240,3 +240,4 @@ caddy_config/
 # Ignore Docker Compose override configurations intended only for your host system
 docker-compose.override.yml
 
+/share/

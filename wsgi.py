@@ -7,8 +7,12 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
+# wsgi.py
 from src.app import app
+from src.validator import BASE_DIR
+
+# Ensures the 'share' directory exists before running
+BASE_DIR.mkdir(parents=True, exist_ok=True)
 
 if __name__ == "__main__":
-    app.run()
-
+    app.run(debug=True)

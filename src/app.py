@@ -7,20 +7,49 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-from flask import Flask, render_template
+from pathlib import Path
+from flask import Flask, abort, render_template, request
+from .directory_processor import DirectoryProcessor
+from .file_processor import FileProcessor
+from .validator import BASE_DIR
 
-app = Flask(__name__, template_folder='../templates')
+# Resolve the project root folder explicitly
+ROOT_DIR = Path(__file__).resolve().parent.parent
+TEMPLATES_DIR = ROOT_DIR / "templates"
 
-@app.route('/')
-def home():
-    # Context dictionary to pass dynamic data to the HTML template
-    context = {
-        "title": "Open Source Backend",
-        "status": "Online",
-        "framework": "Flask + Gunicorn + Caddy"
-    }
-    return render_template('index.html', **context)
+app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
 
-if __name__ == '__main__':
-    # Used only for local development debugging
-    app.run(host='127.0.0.1', port=5000, debug=True)
+
+@app.route("/")
+def index():
+    return browse_directory()
+
+
+@app.route("/opendir")
+def browse_directory():
+    path_param = request.args.get("p", "")
+    processor = DirectoryProcessor(path_param)
+
+    return render_template(
+        "browser.html",
+        items=processor.get_contents(),
+        current_path=path_param,
+        parent_path=processor.get_parent_path(),
+    )
+
+
+@app.route("/openfile")
+def view_file():
+    path_param = request.args.get("p", "")
+    if not path_param:
+        abort(400, "Missing path parameter 'p'")
+
+    processor = FileProcessor(path_param)
+    data = processor.get_file_data()
+
+    return render_template(
+        "viewer.html",
+        content=data["content"],
+        filename=data["filename"],
+        lang=data["lang"],
+    )

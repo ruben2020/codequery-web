@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!--
+codequery-web
+Copyright (C) 2026 ruben2020 https://github.com/ruben2020/
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Browser</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background: #f9f9f9; color: #333; }
+        h1 { font-size: 1.5rem; color: #555; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 10px 0; font-size: 1.1rem; }
+        a { text-decoration: none; color: #0066cc; }
+        a:hover { text-decoration: underline; }
+        .back-btn { display: inline-block; margin-bottom: 20px; color: #666; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Index of /{{ current_path }}</h1>
+
+    {% if parent_path is not none %}
+        <a class="back-btn" href="{{ url_for('browse_directory', p=parent_path) }}">📁 .. (Parent Directory)</a>
+    {% endif %}
+
+    <ul>
+        {% for item in items %}
+            <li>
+                {% if item.is_dir %}
+                    📁 <a href="{{ url_for('browse_directory', p=item.rel_path) }}"><strong>{{ item.name }}/</strong></a>
+                {% else %}
+                    📄 <a href="{{ url_for('view_file', p=item.rel_path) }}">{{ item.name }}</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>
