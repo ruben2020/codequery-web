@@ -10,15 +10,56 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>File Browser</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Browser - /{{ current_path }}</title>
     <style>
-        body { font-family: sans-serif; margin: 40px; background: #f9f9f9; color: #333; }
-        h1 { font-size: 1.5rem; color: #555; }
+        /* Base styles matched to viewer.html (dark theme) */
+        body { 
+            font-family: sans-serif; 
+            margin: 40px; 
+            /* Matches viewer.html background (#2d2d2d) */
+            background-color: #2d2d2d; 
+            /* Matches viewer.html base text (#fff) */
+            color: #fff; 
+        }
+
+        /* Adjust Header colors for dark background */
+        h1 { 
+            font-size: 1.5rem; 
+            color: #f9f9f9; /* Slightly off-white for h1 */
+        }
+
         ul { list-style: none; padding: 0; }
         li { margin: 10px 0; font-size: 1.1rem; }
-        a { text-decoration: none; color: #0066cc; }
-        a:hover { text-decoration: underline; }
-        .back-btn { display: inline-block; margin-bottom: 20px; color: #666; font-weight: bold; }
+
+        /* Link colors adjusted for readability on dark background */
+        a { 
+            text-decoration: none; 
+            /* Light blue for links, matching viewer.html's 'back-link' style */
+            color: #4da6ff; 
+        }
+        
+        a:hover { 
+            text-decoration: underline; 
+            color: #fff; /* White on hover */
+        }
+
+        /* Back button adjustments */
+        .back-btn { 
+            display: inline-block; 
+            margin-bottom: 20px; 
+            color: #ccc; /* Lighter grey for the back button text */
+            font-weight: bold; 
+        }
+        
+        .back-btn:hover {
+            color: #fff;
+        }
+
+        /* Sub-directory link adjustment */
+        strong {
+            color: #fff; /* Make directory names stand out more */
+        }
     </style>
 </head>
 <body>
