@@ -1,0 +1,38 @@
+<!--
+codequery-web
+Copyright (C) 2026 ruben2020 https://github.com/ruben2020/
+SPDX-License-Identifier: MIT
+-->
+<form action="{{ url_for('search_results') }}" method="POST" class="search-form">
+    <div class="form-row">
+        <label for="search_term">Search term:</label>
+        <input type="text" id="search_term" name="search_term" value="{{ search_term|default('') }}" autocomplete="off">
+    </div>
+    <div class="form-row">
+        <label for="path_filter">Path filter:</label>
+        <input type="text" id="path_filter" name="path_filter" value="{{ path_filter|default('') }}" autocomplete="off">
+    </div>
+    <div class="form-row">
+        <label for="search_type">Search type:</label>
+        <select id="search_type" name="search_type">
+            <option value="1"{% if search_type == '1' or not search_type %} selected{% endif %}>Symbol</option>
+            <option value="2"{% if search_type == '2' %} selected{% endif %}>Function or macro definition</option>
+            <option value="3"{% if search_type == '3' %} selected{% endif %}>Class or struct</option>
+            <option value="4"{% if search_type == '4' %} selected{% endif %}>Files including this file</option>
+            <option value="6"{% if search_type == '6' %} selected{% endif %}>Functions calling this function</option>
+            <option value="7"{% if search_type == '7' %} selected{% endif %}>Functions called by this function</option>
+            <option value="8"{% if search_type == '8' %} selected{% endif %}>Calls of this function or macro</option>
+            <option value="9"{% if search_type == '9' %} selected{% endif %}>Members and methods of this class</option>
+            <option value="10"{% if search_type == '10' %} selected{% endif %}>Class which owns this member or method</option>
+            <option value="11"{% if search_type == '11' %} selected{% endif %}>Children of this class (inheritance)</option>
+            <option value="12"{% if search_type == '12' %} selected{% endif %}>Parent of this class</option>
+        </select>
+    </div>
+    <div class="form-row form-checkbox">
+        <input type="checkbox" id="exact_match" name="exact_match" value="1"{% if exact_match %} checked{% endif %}>
+        <label for="exact_match">Exact match</label>
+    </div>
+    <div class="form-row form-actions">
+        <button type="submit" class="search-btn">Search</button>
+    </div>
+</form>

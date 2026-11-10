@@ -57,9 +57,28 @@ SPDX-License-Identifier: MIT
         strong {
             color: #fff; /* Make directory names stand out more */
         }
+
+        .top-nav {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444;
+        }
+        .top-nav a {
+            color: #4da6ff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .top-nav a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+
+    <div class="top-nav">
+        <a href="{{ url_for('search_query') }}">Search Query</a>
+    </div>
 
     <h1>Index of /{{ current_path }}</h1>
 

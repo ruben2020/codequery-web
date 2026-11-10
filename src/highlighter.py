@@ -23,7 +23,11 @@ class SymbolSearchHtmlFormatter(HtmlFormatter):
     in a search hyperlink pointing to a search endpoint.
     """
 
-    def __init__(self, search_url_prefix: str = "/search?term=", **options) -> None:
+    def __init__(
+        self,
+        search_url_prefix: str = "/search_results?search_term=",
+        **options,
+    ) -> None:
         super().__init__(**options)
         self.search_url_prefix = search_url_prefix
 
@@ -58,7 +62,8 @@ class SymbolSearchHtmlFormatter(HtmlFormatter):
             if ttype in Token.Name:
                 term = value.strip()
                 if term:
-                    url = f"{self.search_url_prefix}{urllib.parse.quote_plus(term)}"
+                    sep = "&" if "?" in self.search_url_prefix else "?"
+                    url = f"{self.search_url_prefix}{urllib.parse.quote_plus(term)}{sep}search_type=1"
                     parts[0] = f'<a href="{url}" class="symbol-link">{parts[0]}'
                     parts[-1] = parts[-1] + "</a>"
 
@@ -113,7 +118,7 @@ def highlight_code(
     filename: str,
     lang: str = "",
     style: str = "monokai",
-    search_url_prefix: str = "/search?term=",
+    search_url_prefix: str = "/search_results?search_term=",
 ) -> Tuple[str, str]:
     """
     Highlights code using Pygments and SymbolSearchHtmlFormatter.
@@ -123,6 +128,8 @@ def highlight_code(
     formatter = SymbolSearchHtmlFormatter(
         search_url_prefix=search_url_prefix,
         linenos="table",
+        lineanchors="line",
+        anchorlinenos=True,
         style=style,
     )
     highlighted_html = highlight(content, lexer, formatter)

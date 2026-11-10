@@ -78,9 +78,32 @@ SPDX-License-Identifier: MIT
             color: #4da6ff !important;
             text-decoration: underline !important;
         }
+        .top-nav {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444;
+        }
+        .top-nav a {
+            color: #4da6ff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .top-nav a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+        :target {
+            background-color: rgba(255, 230, 0, 0.3) !important;
+            display: inline-block;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
+
+    <div class="top-nav">
+        <a href="{{ url_for('search_query') }}">Search Query</a>
+    </div>
 
     <div class="header">
         <h2>Viewing: {{ filename }}</h2>
@@ -90,6 +113,27 @@ SPDX-License-Identifier: MIT
     <div class="code-viewer">
         {{ highlighted_content | safe }}
     </div>
+
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            const hash = window.location.hash;
+            if (hash) {
+                let el = document.querySelector(hash);
+                if (!el) {
+                    const num = hash.replace(/[^0-9]/g, '');
+                    if (num) {
+                        el = document.getElementById('line-' + num);
+                    }
+                }
+                if (el) {
+                    el.scrollIntoView({ behavior: 'auto', block: 'center' });
+                    el.style.display = 'inline-block';
+                    el.style.width = '100%';
+                    el.style.backgroundColor = 'rgba(255, 230, 0, 0.3)';
+                }
+            }
+        });
+    </script>
 
 </body>
 </html>

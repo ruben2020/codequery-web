@@ -5,9 +5,10 @@
 #
 
 from pathlib import Path
-from flask import Flask, abort, render_template, request
+from flask import Flask, abort, render_template, request, url_for
 from .directory_processor import DirectoryProcessor
 from .file_processor import FileProcessor
+from .search_processor import SearchProcessor
 from .validator import BASE_DIR
 
 # Resolve the project root folder explicitly
@@ -55,10 +56,69 @@ def view_file():
     )
 
 
-@app.route("/search")
-@app.route("/search/<path:term>")
-def search(term: str = ""):
-    if not term:
-        term = request.args.get("term") or request.args.get("q") or ""
+@app.route("/search_form")
+@app.route("/search_query")
+def search_query():
+    return render_template(
+        "search_query.html",
+        search_term="",
+        path_filter="",
+        search_type="1",
+        exact_match=False,
+    )
 
-    return render_template("search.html", term=term)
+
+@app.route("/search/<path:term>", methods=["GET", "POST"])
+@app.route("/search", methods=["GET", "POST"])
+@app.route("/search_results", methods=["GET", "POST"])
+def search_results(term: str = ""):
+    if request.method == "POST":
+        search_term = request.form.get("search_term", "").strip()
+        path_filter = request.form.get("path_filter", "").strip()
+        search_type = request.form.get("search_type", "1").strip()
+        exact_match = bool(request.form.get("exact_match"))
+    else:
+        # GET request
+        search_term = (
+            term
+            or request.args.get("search_term")
+            or request.args.get("term")
+            or request.args.get("q")
+            or ""
+        ).strip()
+        path_filter = (
+            request.args.get("path_filter")
+            or request.args.get("filter")
+            or ""
+        ).strip()
+        search_type = (
+            request.args.get("search_type")
+            or request.args.get("type")
+            or "1"
+        ).strip()
+        exact_val = request.args.get("exact_match") or request.args.get("exact") or ""
+        exact_match = bool(exact_val and exact_val.lower() not in ("0", "false", "no"))
+
+    if not search_type:
+        search_type = "1"
+
+    searched = bool(search_term)
+    results = []
+    if searched:
+        processor = SearchProcessor(
+            search_term=search_term,
+            search_type=search_type,
+            path_filter=path_filter,
+            exact_match=exact_match,
+        )
+        results = processor.execute()
+
+    return render_template(
+        "search_results.html",
+        search_term=search_term,
+        path_filter=path_filter,
+        search_type=search_type,
+        exact_match=exact_match,
+        results=results,
+        searched=searched,
+    )
