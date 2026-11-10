@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+codequery-web
+Copyright (C) 2026 ruben2020 https://github.com/ruben2020/
+SPDX-License-Identifier: MIT
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search: {{ term }}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 40px;
+            background-color: #2d2d2d;
+            color: #fff;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #f9f9f9;
+        }
+        a {
+            color: #4da6ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #fff;
+        }
+        .back-link {
+            color: #4da6ff;
+            font-size: 1rem;
+        }
+        .search-box {
+            background-color: #383838;
+            padding: 24px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            margin-top: 20px;
+        }
+        .term-highlight {
+            color: #4da6ff;
+            font-family: monospace;
+            font-size: 1.25rem;
+            background-color: #222;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .desc {
+            color: #ccc;
+            margin-top: 15px;
+            font-size: 1.05rem;
+        }
+        .nav-links {
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Search Results</h2>
+        <a class="back-link" href="javascript:history.back()">&larr; Back</a>
+    </div>
+
+    <div class="search-box">
+        {% if term %}
+            <h3>Symbol: <span class="term-highlight">{{ term }}</span></h3>
+            <p class="desc">Placeholder search results for symbol <strong>{{ term }}</strong>.</p>
+        {% else %}
+            <h3>No search term provided</h3>
+            <p class="desc">Please provide a search term using <code>?term=...</code></p>
+        {% endif %}
+        <div class="nav-links">
+            <a href="{{ url_for('browse_directory') }}">&larr; Return to File Browser</a>
+        </div>
+    </div>
+
+</body>
+</html>

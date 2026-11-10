@@ -46,7 +46,19 @@ def view_file():
 
     return render_template(
         "viewer.html",
-        content=data["content"],
+        content=data["highlighted_content"],
+        raw_content=data["content"],
+        highlighted_content=data["highlighted_content"],
+        pygments_css=data["pygments_css"],
         filename=data["filename"],
         lang=data["lang"],
     )
+
+
+@app.route("/search")
+@app.route("/search/<path:term>")
+def search(term: str = ""):
+    if not term:
+        term = request.args.get("term") or request.args.get("q") or ""
+
+    return render_template("search.html", term=term)
