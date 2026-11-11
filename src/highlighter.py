@@ -117,7 +117,7 @@ def highlight_code(
     content: str,
     filename: str,
     lang: str = "",
-    style: str = "monokai",
+    style: str = "rrt",
     search_url_prefix: str = "/search_results?search_term=",
 ) -> Tuple[str, str]:
     """

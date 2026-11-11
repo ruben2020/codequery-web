@@ -38,9 +38,9 @@ class FileProcessor(PathValidator):
 
         match ext:
             # C and C++
-            case ".c" | ".h":
+            case ".c":
                 return "c"
-            case ".cpp" | ".hpp" | ".cc" | ".cxx":
+            case ".cpp" | ".hpp" | ".cc" | ".cxx" | ".h" | ".hh" | ".hxx":
                 return "cpp"
 
             # Python
