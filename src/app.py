@@ -6,10 +6,10 @@
 
 from pathlib import Path
 from flask import Flask, abort, render_template, request, url_for
-from .directory_processor import DirectoryProcessor
+from .directory_processor import DirectoryProcessor, get_folder_breadcrumbs
 from .file_processor import FileProcessor
 from .search_processor import SearchProcessor
-from .validator import BASE_DIR
+from .validator import get_base_dir
 
 # Resolve the project root folder explicitly
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +33,7 @@ def browse_directory():
         items=processor.get_contents(),
         current_path=path_param,
         parent_path=processor.get_parent_path(),
+        folder_levels=get_folder_breadcrumbs(path_param),
     )
 
 
@@ -45,6 +46,9 @@ def view_file():
     processor = FileProcessor(path_param)
     data = processor.get_file_data()
 
+    clean_p = path_param.replace("\\", "/").strip("/")
+    parent_dir = "/".join(clean_p.split("/")[:-1]) if "/" in clean_p else ""
+
     return render_template(
         "viewer.html",
         content=data["highlighted_content"],
@@ -53,6 +57,8 @@ def view_file():
         pygments_css=data["pygments_css"],
         filename=data["filename"],
         lang=data["lang"],
+        current_file=data["filename"],
+        folder_levels=get_folder_breadcrumbs(parent_dir),
     )
 
 

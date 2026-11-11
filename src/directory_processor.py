@@ -7,7 +7,29 @@
 from pathlib import Path
 from typing import Any
 from flask import abort
-from .validator import BASE_DIR, PathValidator
+from .validator import get_base_dir, PathValidator
+
+
+def get_folder_breadcrumbs(rel_path: str) -> list[dict[str, str]]:
+    """
+    Given a relative directory path (e.g. 'cli' or 'gui/dialogs'), returns a list of
+    dicts with 'name' and 'path' for each folder segment.
+    """
+    clean = rel_path.replace("\\", "/").strip("/")
+    if not clean:
+        return []
+    parts = clean.split("/")
+    breadcrumbs = []
+    accum = []
+    for part in parts:
+        if not part:
+            continue
+        accum.append(part)
+        breadcrumbs.append({
+            "name": part,
+            "path": "/".join(accum),
+        })
+    return breadcrumbs
 
 
 class DirectoryProcessor(PathValidator):
@@ -22,9 +44,10 @@ class DirectoryProcessor(PathValidator):
 
     def get_contents(self) -> list[dict[str, Any]]:
         items = []
+        base_dir = get_base_dir()
 
         for item in self.abs_path.iterdir():
-            rel_item = item.relative_to(BASE_DIR)
+            rel_item = item.relative_to(base_dir)
 
             items.append(
                 {
@@ -40,11 +63,12 @@ class DirectoryProcessor(PathValidator):
 
     def get_parent_path(self) -> str | None:
         """Returns relative parent string or None if already at root."""
-        if not self.rel_path or self.abs_path == BASE_DIR:
+        base_dir = get_base_dir()
+        if not self.rel_path or self.abs_path == base_dir:
             return None
 
         parent = self.abs_path.parent
-        if parent == BASE_DIR:
+        if parent == base_dir:
             return ""
 
-        return parent.relative_to(BASE_DIR).as_posix()
+        return parent.relative_to(base_dir).as_posix()

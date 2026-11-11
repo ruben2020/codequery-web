@@ -5,8 +5,13 @@
 #
 
 import unittest
+from pathlib import Path
 from src.app import app
 from src.search_processor import SearchProcessor, resolve_relative_path
+from src.directory_processor import get_folder_breadcrumbs
+from src.file_processor import FileProcessor
+from src.validator import get_base_dir, set_base_dir
+from wsgi import parse_args
 
 
 class TestSearchAndNavigation(unittest.TestCase):
@@ -85,6 +90,10 @@ class TestSearchAndNavigation(unittest.TestCase):
         self.assertIn("<th>Preview</th>", res.text)
         self.assertIn("main_cli.cpp", res.text)
         self.assertIn("/openfile?p=cli/main_cli.cpp#line-215", res.text)
+        # Verify path in column is truncated relative to share/
+        self.assertIn(">cli/main_cli.cpp:215</a>", res.text)
+        self.assertNotIn("$HOME", res.text)
+        self.assertNotIn("share/cli/main_cli.cpp", res.text)
 
     def test_post_search_2_columns_type_4(self):
         res = self.client.post("/search_results", data={
@@ -149,6 +158,86 @@ class TestSearchAndNavigation(unittest.TestCase):
         # Verify execute generates expected results or handles nonexistent terms gracefully
         results = proc.execute()
         self.assertIsInstance(results, list)
+
+    def test_folder_bar_in_folder_browser_root(self):
+        res = self.client.get("/opendir")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('class="folder-bar"', res.text)
+        self.assertIn('class="folder-level">/</a>', res.text)
+
+    def test_folder_bar_in_folder_browser_subfolder(self):
+        res = self.client.get("/opendir?p=cli")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('class="folder-bar"', res.text)
+        self.assertIn('class="folder-level">/</a>', res.text)
+        self.assertIn('href="/opendir?p=cli"', res.text)
+        self.assertIn('class="folder-level">cli</a>', res.text)
+
+    def test_folder_bar_in_file_viewer(self):
+        res = self.client.get("/openfile?p=cli/main_cli.cpp")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('class="folder-bar"', res.text)
+        self.assertIn('class="folder-level">/</a>', res.text)
+        self.assertIn('href="/opendir?p=cli"', res.text)
+        self.assertIn('class="folder-level">cli</a>', res.text)
+        self.assertIn('class="file-level">main_cli.cpp</span>', res.text)
+
+    def test_folder_bar_in_file_viewer_root_file(self):
+        res = self.client.get("/openfile?p=README.md")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('class="folder-bar"', res.text)
+        self.assertIn('class="folder-level">/</a>', res.text)
+        self.assertIn('class="file-level">README.md</span>', res.text)
+
+    def test_get_folder_breadcrumbs(self):
+        crumbs = get_folder_breadcrumbs("gui/dialogs/find")
+        self.assertEqual(
+            crumbs,
+            [
+                {"name": "gui", "path": "gui"},
+                {"name": "dialogs", "path": "gui/dialogs"},
+                {"name": "find", "path": "gui/dialogs/find"},
+            ],
+        )
+        self.assertEqual(get_folder_breadcrumbs(""), [])
+        self.assertEqual(get_folder_breadcrumbs("cli"), [{"name": "cli", "path": "cli"}])
+
+    def test_markdown_syntax_highlighting(self):
+        proc = FileProcessor("README.md")
+        data = proc.get_file_data()
+        self.assertEqual(data["lang"], "markdown")
+        self.assertIn("highlight", data["highlighted_content"])
+
+        res = self.client.get("/openfile?p=README.md")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Viewing: README.md", res.text)
+
+    def test_wsgi_args_parsing(self):
+        # Default with no args
+        args = parse_args([])
+        self.assertIsNone(args.share_dir)
+        self.assertIsNone(args.share_opt)
+
+        # Positional share_dir arg
+        args = parse_args(["/custom/share/dir"])
+        self.assertEqual(args.share_dir, "/custom/share/dir")
+        self.assertIsNone(args.share_opt)
+
+        # Optional flag --share
+        args = parse_args(["--share", "/another/path"])
+        self.assertEqual(args.share_opt, "/another/path")
+
+        # Optional flag -s
+        args = parse_args(["-s", "/short/path"])
+        self.assertEqual(args.share_opt, "/short/path")
+
+    def test_base_dir_setter_and_getter(self):
+        orig = get_base_dir()
+        try:
+            set_base_dir("/tmp/test_codequery_share")
+            self.assertEqual(get_base_dir(), Path("/tmp/test_codequery_share").resolve())
+        finally:
+            set_base_dir(orig)
 
 
 if __name__ == "__main__":

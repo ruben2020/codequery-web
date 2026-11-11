@@ -31,8 +31,8 @@ class FileProcessor(PathValidator):
 
     def _detect_language(self) -> str:
         """
-        Maps file extensions to standard Prism.js language classes.
-        Target languages: C/C++, Python, JavaScript, Go, Java, C#
+        Maps file extensions to standard Pygments language classes.
+        Target languages: C/C++, Python, JavaScript, Go, Java, C#, Markdown
         """
         ext = self.abs_path.suffix.lower()
 
@@ -62,6 +62,14 @@ class FileProcessor(PathValidator):
             # C#
             case ".cs":
                 return "csharp"
+
+            # Markdown
+            case ".md" | ".markdown":
+                return "markdown"
+
+            # CMake
+            case ".cmake" | "CMakeLists.txt":
+                return "cmake"
 
             # Fallback
             case _:

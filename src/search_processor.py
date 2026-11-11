@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 from flask import url_for
-from .validator import BASE_DIR
+from .validator import get_base_dir
 
 
 def resolve_relative_path(full_path: str) -> str:
@@ -18,15 +18,21 @@ def resolve_relative_path(full_path: str) -> str:
     Given a file path from cqsearch (e.g. $HOME/.../share/cli/main_cli.cpp),
     resolves it to a path relative to BASE_DIR (e.g. cli/main_cli.cpp).
     """
+    base = get_base_dir()
     expanded = os.path.expandvars(full_path)
     try:
         p = Path(expanded).resolve()
-        if p.is_relative_to(BASE_DIR):
-            return p.relative_to(BASE_DIR).as_posix()
+        if p.is_relative_to(base):
+            return p.relative_to(base).as_posix()
     except Exception:
         pass
 
     normalized = full_path.replace("\\", "/")
+    base_name = base.name
+    if f"/{base_name}/" in normalized:
+        return normalized.split(f"/{base_name}/", 1)[1]
+    if normalized.startswith(f"{base_name}/"):
+        return normalized[len(f"{base_name}/") :]
     if "/share/" in normalized:
         return normalized.split("/share/", 1)[1]
     if normalized.startswith("share/"):
@@ -74,7 +80,7 @@ class SearchProcessor:
         try:
             res = subprocess.run(
                 cmd,
-                cwd=str(BASE_DIR),
+                cwd=str(get_base_dir()),
                 capture_output=True,
                 text=True,
                 check=False,
@@ -109,6 +115,8 @@ class SearchProcessor:
                 full_file_path, line_no = path_with_line, ""
 
             rel_path = resolve_relative_path(full_file_path)
+            display_path = f"{rel_path}:{line_no}" if line_no else rel_path
+
             try:
                 file_url = url_for("view_file", p=rel_path)
             except RuntimeError:
@@ -120,7 +128,7 @@ class SearchProcessor:
             results.append(
                 {
                     "symbol": symbol,
-                    "path_with_line": path_with_line,
+                    "path_with_line": display_path,
                     "preview": preview,
                     "url": file_url,
                 }
