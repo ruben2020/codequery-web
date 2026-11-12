@@ -1,5 +1,6 @@
 # codequery-web
-================
+
+Status: Under active development, but already usable
 
 This is a web-based user interface for [CodeQuery](https://github.com/ruben2020/codequery).
 
