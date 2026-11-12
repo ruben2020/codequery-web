@@ -251,6 +251,56 @@ class TestSearchAndNavigation(unittest.TestCase):
         finally:
             set_base_dir(orig)
 
+    def test_input_history_dropdown_and_cookies_last_5_unique(self):
+        # Initially, datalist elements are present and empty
+        res = self.client.get("/search_query")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('list="search_term_history"', res.text)
+        self.assertIn('<datalist id="search_term_history">', res.text)
+        self.assertIn('list="path_filter_history"', res.text)
+        self.assertIn('<datalist id="path_filter_history">', res.text)
+
+        # Submit 6 unique search terms and 6 unique path filters
+        for i in range(1, 7):
+            res = self.client.post("/search_results", data={
+                "search_term": f"term{i}",
+                "path_filter": f"path{i}",
+                "search_type": "1",
+            })
+            self.assertEqual(res.status_code, 200)
+
+        # Duplicate an existing entry (term3 and path3) to verify uniqueness and MRU order
+        res = self.client.post("/search_results", data={
+            "search_term": "term3",
+            "path_filter": "path3",
+            "search_type": "1",
+        })
+        self.assertEqual(res.status_code, 200)
+
+        # Submit empty values to ensure they don't overwrite or enter the history
+        res = self.client.post("/search_results", data={
+            "search_term": "",
+            "path_filter": "",
+            "search_type": "1",
+        })
+        self.assertEqual(res.status_code, 200)
+
+        # Verify on /search_query page that only the last 5 unique entries exist
+        res = self.client.get("/search_query")
+        self.assertEqual(res.status_code, 200)
+
+        # term1 and path1 should have been evicted (only 5 unique kept: 3, 6, 5, 4, 2)
+        self.assertNotIn('<option value="term1">', res.text)
+        self.assertNotIn('<option value="path1">', res.text)
+
+        for idx in (3, 6, 5, 4, 2):
+            self.assertIn(f'<option value="term{idx}">term{idx}</option>', res.text)
+            self.assertIn(f'<option value="path{idx}">path{idx}</option>', res.text)
+
+        # Ensure no duplicate option tags for term3 or path3
+        self.assertEqual(res.text.count('<option value="term3">term3</option>'), 1)
+        self.assertEqual(res.text.count('<option value="path3">path3</option>'), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

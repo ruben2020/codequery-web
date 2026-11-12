@@ -6,11 +6,21 @@ SPDX-License-Identifier: MIT
 <form action="{{ url_for('search_results') }}" method="POST" class="search-form">
     <div class="form-row">
         <label for="search_term">Search term:</label>
-        <input type="text" id="search_term" name="search_term" value="{{ search_term|default('') }}" autocomplete="off">
+        <input type="text" id="search_term" name="search_term" value="{{ search_term|default('') }}" list="search_term_history" autocomplete="off">
+        <datalist id="search_term_history">
+            {% for item in search_term_history|default([]) %}
+            <option value="{{ item }}">{{ item }}</option>
+            {% endfor %}
+        </datalist>
     </div>
     <div class="form-row">
         <label for="path_filter">Path filter:</label>
-        <input type="text" id="path_filter" name="path_filter" value="{{ path_filter|default('') }}" autocomplete="off">
+        <input type="text" id="path_filter" name="path_filter" value="{{ path_filter|default('') }}" list="path_filter_history" autocomplete="off">
+        <datalist id="path_filter_history">
+            {% for item in path_filter_history|default([]) %}
+            <option value="{{ item }}">{{ item }}</option>
+            {% endfor %}
+        </datalist>
     </div>
     <div class="form-row">
         <label for="search_type">Search type:</label>
@@ -36,3 +46,57 @@ SPDX-License-Identifier: MIT
         <button type="submit" class="search-btn">Search</button>
     </div>
 </form>
+<script>
+    (function () {
+        function parseCookieHistory(cookieName) {
+            const cookies = document.cookie ? document.cookie.split('; ') : [];
+            const match = cookies.find(row => row.startsWith(cookieName + '='));
+            if (!match) return null;
+            const raw = match.substring(cookieName.length + 1);
+            const candidates = [raw];
+            try { candidates.push(decodeURIComponent(raw)); } catch (e) {}
+            if (raw.startsWith('"') && raw.endsWith('"')) {
+                const unquoted = raw.slice(1, -1)
+                    .replace(/\\([0-3][0-7]{2})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+                    .replace(/\\"/g, '"')
+                    .replace(/\\\\/g, '\\');
+                candidates.push(unquoted);
+            }
+            for (const c of candidates) {
+                try {
+                    const parsed = JSON.parse(c);
+                    if (Array.isArray(parsed)) {
+                        const unique = [];
+                        for (const item of parsed) {
+                            if (typeof item === 'string') {
+                                const val = item.trim();
+                                if (val && !unique.includes(val)) unique.push(val);
+                            }
+                        }
+                        return unique.slice(0, 5);
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        function syncDatalist(datalistId, cookieName) {
+            const items = parseCookieHistory(cookieName);
+            if (!items) return;
+            const dl = document.getElementById(datalistId);
+            if (!dl) return;
+            dl.innerHTML = '';
+            for (const item of items) {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                dl.appendChild(opt);
+            }
+        }
+
+        window.addEventListener('pageshow', () => {
+            syncDatalist('search_term_history', 'search_term_history');
+            syncDatalist('path_filter_history', 'path_filter_history');
+        });
+    })();
+</script>

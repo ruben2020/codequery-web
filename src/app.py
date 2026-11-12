@@ -4,8 +4,10 @@
 # SPDX-License-Identifier: MIT
 #
 
+import json
 from pathlib import Path
-from flask import Flask, abort, render_template, request, url_for
+from urllib.parse import unquote
+from flask import Flask, abort, make_response, render_template, request, url_for
 from .directory_processor import DirectoryProcessor, get_folder_breadcrumbs
 from .file_processor import FileProcessor
 from .search_processor import SearchProcessor
@@ -16,6 +18,39 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = ROOT_DIR / "templates"
 
 app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
+
+MAX_HISTORY_ITEMS = 5
+SEARCH_TERM_COOKIE = "search_term_history"
+PATH_FILTER_COOKIE = "path_filter_history"
+COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+
+
+def get_history_from_cookie(cookie_name: str) -> list[str]:
+    raw = request.cookies.get(cookie_name, "")
+    if not raw:
+        return []
+    for candidate in (raw, unquote(raw)):
+        try:
+            parsed = json.loads(candidate)
+            if isinstance(parsed, list):
+                result: list[str] = []
+                for item in parsed:
+                    if isinstance(item, str):
+                        val = item.strip()
+                        if val and val not in result:
+                            result.append(val)
+                return result[:MAX_HISTORY_ITEMS]
+        except (ValueError, TypeError):
+            continue
+    return []
+
+
+def update_history(history: list[str], new_entry: str) -> list[str]:
+    cleaned = new_entry.strip()
+    if not cleaned:
+        return history[:MAX_HISTORY_ITEMS]
+    updated = [cleaned] + [item for item in history if item != cleaned]
+    return updated[:MAX_HISTORY_ITEMS]
 
 
 @app.route("/")
@@ -65,12 +100,16 @@ def view_file():
 @app.route("/search_form")
 @app.route("/search_query")
 def search_query():
+    search_term_history = get_history_from_cookie(SEARCH_TERM_COOKIE)
+    path_filter_history = get_history_from_cookie(PATH_FILTER_COOKIE)
     return render_template(
         "search_query.html",
         search_term="",
         path_filter="",
         search_type="1",
         exact_match=False,
+        search_term_history=search_term_history,
+        path_filter_history=path_filter_history,
     )
 
 
@@ -108,6 +147,14 @@ def search_results(term: str = ""):
     if not search_type:
         search_type = "1"
 
+    search_term_history = get_history_from_cookie(SEARCH_TERM_COOKIE)
+    path_filter_history = get_history_from_cookie(PATH_FILTER_COOKIE)
+
+    if search_term:
+        search_term_history = update_history(search_term_history, search_term)
+    if path_filter:
+        path_filter_history = update_history(path_filter_history, path_filter)
+
     searched = bool(search_term)
     results = []
     if searched:
@@ -119,12 +166,31 @@ def search_results(term: str = ""):
         )
         results = processor.execute()
 
-    return render_template(
-        "search_results.html",
-        search_term=search_term,
-        path_filter=path_filter,
-        search_type=search_type,
-        exact_match=exact_match,
-        results=results,
-        searched=searched,
+    response = make_response(
+        render_template(
+            "search_results.html",
+            search_term=search_term,
+            path_filter=path_filter,
+            search_type=search_type,
+            exact_match=exact_match,
+            results=results,
+            searched=searched,
+            search_term_history=search_term_history,
+            path_filter_history=path_filter_history,
+        )
     )
+    if search_term:
+        response.set_cookie(
+            SEARCH_TERM_COOKIE,
+            json.dumps(search_term_history),
+            max_age=COOKIE_MAX_AGE,
+            samesite="Lax",
+        )
+    if path_filter:
+        response.set_cookie(
+            PATH_FILTER_COOKIE,
+            json.dumps(path_filter_history),
+            max_age=COOKIE_MAX_AGE,
+            samesite="Lax",
+        )
+    return response
