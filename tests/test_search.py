@@ -122,6 +122,18 @@ class TestSearchAndNavigation(unittest.TestCase):
         self.assertIn('search_type=1', res.text)
         self.assertIn('id="line-215"', res.text)
 
+    def test_viewer_line_spans_and_no_offset(self):
+        res = self.client.get("/openfile?p=cli/main_cli.cpp")
+        self.assertEqual(res.status_code, 200)
+        # Line 215 in main_cli.cpp is 'int main(int argc, char *argv[])'
+        # Verify <span id="line-215"> wraps line 215 (and not an empty <a id="line-215"></a>)
+        self.assertIn('<span id="line-215">', res.text)
+        self.assertNotIn('<a id="line-215"', res.text)
+        line_215_segment = res.text.split('<span id="line-215">', 1)[1].split("</span>\n", 1)[0]
+        self.assertIn("main", line_215_segment)
+        self.assertIn("argc", line_215_segment)
+        self.assertIn("argv", line_215_segment)
+
     def test_resolve_relative_path(self):
         rel = resolve_relative_path("$HOME/repo/codequery-web/share/cli/main_cli.cpp")
         self.assertEqual(rel, "cli/main_cli.cpp")

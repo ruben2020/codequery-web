@@ -103,14 +103,14 @@ def get_lexer_for_code(filename: str, content: str, lang: str = ""):
     """
     if lang and lang != "plaintext":
         try:
-            return get_lexer_by_name(lang)
+            return get_lexer_by_name(lang, stripnl=False)
         except ClassNotFound:
             pass
 
     try:
-        return get_lexer_for_filename(filename, content)
+        return get_lexer_for_filename(filename, content, stripnl=False)
     except ClassNotFound:
-        return TextLexer()
+        return TextLexer(stripnl=False)
 
 
 def highlight_code(
@@ -128,7 +128,7 @@ def highlight_code(
     formatter = SymbolSearchHtmlFormatter(
         search_url_prefix=search_url_prefix,
         linenos="table",
-        lineanchors="line",
+        linespans="line",
         anchorlinenos=True,
         style=style,
     )
