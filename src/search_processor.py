@@ -15,7 +15,8 @@ from .validator import get_base_dir
 
 def resolve_relative_path(full_path: str) -> str:
     """
-    Given a file path from cqsearch (e.g. $HOME/.../share/cli/main_cli.cpp),
+    Given a file path from cqsearch (e.g. $HOME/.../share/cli/main_cli.cpp
+    or C:\\repo\\codequery-web\\share\\cli\\main_cli.cpp),
     resolves it to a path relative to BASE_DIR (e.g. cli/main_cli.cpp).
     """
     base = get_base_dir()
@@ -28,6 +29,10 @@ def resolve_relative_path(full_path: str) -> str:
         pass
 
     normalized = full_path.replace("\\", "/")
+    # Strip Windows drive letter prefix if present (e.g. "C:/...")
+    if len(normalized) >= 2 and normalized[1] == ":" and normalized[0].isalpha():
+        normalized = normalized[2:]
+
     base_name = base.name
     if f"/{base_name}/" in normalized:
         return normalized.split(f"/{base_name}/", 1)[1]
@@ -83,6 +88,8 @@ class SearchProcessor:
                 cwd=str(get_base_dir()),
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
             )
         except Exception:

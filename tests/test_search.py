@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 #
 
+import tempfile
 import unittest
 from pathlib import Path
 from src.app import app
@@ -245,11 +246,23 @@ class TestSearchAndNavigation(unittest.TestCase):
 
     def test_base_dir_setter_and_getter(self):
         orig = get_base_dir()
+        temp_path = Path(tempfile.gettempdir()) / "test_codequery_share"
         try:
-            set_base_dir("/tmp/test_codequery_share")
-            self.assertEqual(get_base_dir(), Path("/tmp/test_codequery_share").resolve())
+            set_base_dir(temp_path)
+            self.assertEqual(get_base_dir(), temp_path.resolve())
         finally:
             set_base_dir(orig)
+
+    def test_cross_platform_windows_path_resolution(self):
+        rel = resolve_relative_path(r"C:\Users\dev\repo\codequery-web\share\cli\main_cli.cpp")
+        self.assertEqual(rel, "cli/main_cli.cpp")
+        rel_root = resolve_relative_path(r"D:\projects\share\README.md")
+        self.assertEqual(rel_root, "README.md")
+
+    def test_cmakelists_language_detection(self):
+        proc = FileProcessor("CMakeLists.txt")
+        data = proc.get_file_data()
+        self.assertEqual(data["lang"], "cmake")
 
     def test_input_history_dropdown_and_cookies_last_5_unique(self):
         # Initially, datalist elements are present and empty

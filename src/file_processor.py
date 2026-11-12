@@ -35,6 +35,10 @@ class FileProcessor(PathValidator):
         Target languages: C/C++, Python, JavaScript, Go, Java, C#, Markdown
         """
         ext = self.abs_path.suffix.lower()
+        name = self.abs_path.name.lower()
+
+        if name == "cmakelists.txt":
+            return "cmake"
 
         match ext:
             # C and C++
@@ -68,7 +72,7 @@ class FileProcessor(PathValidator):
                 return "markdown"
 
             # CMake
-            case ".cmake" | "CMakeLists.txt":
+            case ".cmake":
                 return "cmake"
 
             # Fallback

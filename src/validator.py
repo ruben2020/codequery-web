@@ -37,7 +37,13 @@ class PathValidator:
 
         # Strip leading slashes to prevent absolute path override behavior
         clean_rel = relative_path.lstrip("/\\")
-        resolved_path = (base_dir / clean_rel).resolve()
+        rel_path_obj = Path(clean_rel)
+
+        # Reject drive letters or root anchors (e.g. "C:foo" or "C:/foo" on Windows)
+        if rel_path_obj.drive or rel_path_obj.root or rel_path_obj.is_absolute():
+            abort(403)
+
+        resolved_path = (base_dir / rel_path_obj).resolve()
 
         # Modern Python traversal check
         if not resolved_path.is_relative_to(base_dir):
