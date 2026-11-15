@@ -11,11 +11,20 @@ SPDX-License-Identifier: MIT
     <style>
         {{ pygments_css | safe }}
 
+        {% if theme == 'light' %}
         body {
             font-family: sans-serif;
             margin: 30px;
-            background: #2d2d2d;
-            color: #fff;
+            background-color: #ffffff;
+            color: #1f2328;
+        }
+        a {
+            color: #0969da;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #0550ae;
+            text-decoration: underline;
         }
         .header {
             display: flex;
@@ -24,16 +33,16 @@ SPDX-License-Identifier: MIT
             margin-bottom: 15px;
         }
         .back-link {
-            color: #4da6ff;
+            color: #0969da;
             text-decoration: none;
         }
         .back-link:hover {
-            color: #fff;
+            color: #0550ae;
             text-decoration: underline;
         }
         .highlight {
             border-radius: 4px;
-            border: 1px solid #444;
+            border: 1px solid #d0d7de;
             overflow-x: auto;
         }
         .highlighttable {
@@ -49,7 +58,7 @@ SPDX-License-Identifier: MIT
         }
         td.linenos pre {
             margin: 0;
-            color: #777;
+            color: #6e7781;
             text-align: right;
             border: none;
             background: transparent;
@@ -60,7 +69,7 @@ SPDX-License-Identifier: MIT
         td.code {
             padding: 10px;
             vertical-align: top;
-            border-left: 1px solid #3a3a3a;
+            border-left: 1px solid #d0d7de;
         }
         td.code pre {
             margin: 0;
@@ -75,34 +84,178 @@ SPDX-License-Identifier: MIT
             text-decoration: none;
         }
         .symbol-link:hover {
-            color: #4da6ff !important;
+            color: #0969da !important;
             text-decoration: underline !important;
         }
         .top-nav {
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid #d0d7de;
             display: flex;
             gap: 12px;
             align-items: center;
         }
         .top-nav a {
-            color: #4da6ff;
+            color: #0969da;
             text-decoration: none;
             font-weight: bold;
         }
         .top-nav a:hover {
-            color: #fff;
+            color: #0550ae;
             text-decoration: underline;
         }
         .nav-sep {
-            color: #666;
+            color: #8c959f;
         }
         .folder-bar {
             display: flex;
             align-items: center;
-            background-color: #1e1e1e;
-            border: 1px solid #444;
+            background-color: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 20px;
+            font-family: monospace, sans-serif;
+            font-size: 1rem;
+            box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.06);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .folder-bar .folder-icon {
+            margin-right: 6px;
+            user-select: none;
+        }
+        .folder-bar a.folder-level {
+            color: #0969da;
+            text-decoration: none;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .folder-bar a.folder-level:hover {
+            background-color: #eaeef2;
+            color: #0550ae;
+            text-decoration: underline;
+        }
+        .folder-bar .folder-sep {
+            color: #57606a;
+            margin: 0 2px;
+            user-select: none;
+        }
+        .folder-bar .file-level {
+            color: #1f2328;
+            padding: 2px 6px;
+            font-weight: normal;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #d0d7de;
+            font-size: small;
+            color: #57606a;
+            text-align: center;
+        }
+        {% else %}
+        body {
+            font-family: sans-serif;
+            margin: 30px;
+            background-color: #0d1117;
+            color: #e6edf3;
+        }
+        a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #79c0ff;
+            text-decoration: underline;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .back-link {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            color: #79c0ff;
+            text-decoration: underline;
+        }
+        .highlight {
+            border-radius: 4px;
+            border: 1px solid #30363d;
+            overflow-x: auto;
+        }
+        .highlighttable {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td.linenos {
+            padding: 10px 0 10px 10px;
+            vertical-align: top;
+            user-select: none;
+            width: 1%;
+            white-space: nowrap;
+        }
+        td.linenos pre {
+            margin: 0;
+            color: #6e7681;
+            text-align: right;
+            border: none;
+            background: transparent;
+            font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+            font-size: 0.95rem;
+            line-height: 1.25;
+        }
+        td.code {
+            padding: 10px;
+            vertical-align: top;
+            border-left: 1px solid #30363d;
+        }
+        td.code pre {
+            margin: 0;
+            border: none;
+            background: transparent;
+            font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+            font-size: 0.95rem;
+            line-height: 1.25;
+        }
+        .symbol-link {
+            color: inherit;
+            text-decoration: none;
+        }
+        .symbol-link:hover {
+            color: #58a6ff !important;
+            text-decoration: underline !important;
+        }
+        .top-nav {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .top-nav a {
+            color: #58a6ff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .top-nav a:hover {
+            color: #79c0ff;
+            text-decoration: underline;
+        }
+        .nav-sep {
+            color: #6e7681;
+        }
+        .folder-bar {
+            display: flex;
+            align-items: center;
+            background-color: #161b22;
+            border: 1px solid #30363d;
             border-radius: 4px;
             padding: 8px 12px;
             margin-bottom: 20px;
@@ -117,27 +270,36 @@ SPDX-License-Identifier: MIT
             user-select: none;
         }
         .folder-bar a.folder-level {
-            color: #4da6ff;
+            color: #58a6ff;
             text-decoration: none;
             padding: 2px 6px;
             border-radius: 3px;
             font-weight: bold;
         }
         .folder-bar a.folder-level:hover {
-            background-color: #383838;
-            color: #fff;
+            background-color: #21262d;
+            color: #79c0ff;
             text-decoration: underline;
         }
         .folder-bar .folder-sep {
-            color: #777;
+            color: #8b949e;
             margin: 0 2px;
             user-select: none;
         }
         .folder-bar .file-level {
-            color: #ddd;
+            color: #e6edf3;
             padding: 2px 6px;
             font-weight: normal;
         }
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #30363d;
+            font-size: small;
+            color: #8b949e;
+            text-align: center;
+        }
+        {% endif %}
         :target {
             background-color: rgba(255, 230, 0, 0.3) !important;
             display: inline-block;
@@ -146,12 +308,14 @@ SPDX-License-Identifier: MIT
         }
     </style>
 </head>
-<body>
+<body class="{{ 'light-theme' if theme == 'light' else 'dark-theme' }}" data-theme="{{ theme }}">
 
     <div class="top-nav">
         <a href="{{ url_for('search_query') }}">Search Query</a>
         <span class="nav-sep">|</span>
         <a href="{{ url_for('browse_directory') }}">📁 File Browser</a>
+        <span class="nav-sep">|</span>
+        <a href="{{ theme_toggle_url }}">{{ theme_toggle_label }}</a>
     </div>
 
     <div class="folder-bar">
@@ -173,6 +337,10 @@ SPDX-License-Identifier: MIT
     <div class="code-viewer">
         {{ highlighted_content | safe }}
     </div>
+
+    <footer class="footer">
+        <small>Powered by <a href="https://github.com/ruben2020/codequery-web">codequery-web</a></small>
+    </footer>
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {

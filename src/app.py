@@ -6,8 +6,8 @@
 
 import json
 from pathlib import Path
-from urllib.parse import unquote
-from flask import Flask, abort, make_response, render_template, request, url_for
+from urllib.parse import urlencode, unquote
+from flask import Flask, abort, make_response, redirect, render_template, request, url_for
 from .directory_processor import DirectoryProcessor, get_folder_breadcrumbs
 from .file_processor import FileProcessor
 from .search_processor import SearchProcessor
@@ -22,7 +22,81 @@ app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
 MAX_HISTORY_ITEMS = 5
 SEARCH_TERM_COOKIE = "search_term_history"
 PATH_FILTER_COOKIE = "path_filter_history"
+THEME_COOKIE = "theme"
+DEFAULT_THEME = "dark"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+
+
+def get_current_theme() -> str:
+    if request.view_args and "theme_name" in request.view_args:
+        view_theme = str(request.view_args.get("theme_name", "")).strip().lower()
+        if view_theme in ("light", "dark"):
+            return view_theme
+    theme_arg = request.args.get("theme", "").strip().lower()
+    if theme_arg in ("light", "dark"):
+        return theme_arg
+    cookie_val = request.cookies.get(THEME_COOKIE, "").strip().lower()
+    if cookie_val in ("light", "dark"):
+        return cookie_val
+    return DEFAULT_THEME
+
+
+def get_theme_toggle_url(current_theme: str) -> str:
+    target_theme = "light" if current_theme == "dark" else "dark"
+    args = request.args.to_dict(flat=True)
+    if request.method == "POST":
+        for field in ("search_term", "path_filter", "search_type"):
+            val = request.form.get(field, "").strip()
+            if val:
+                args[field] = val
+        if request.form.get("exact_match"):
+            args["exact_match"] = "1"
+    args["theme"] = target_theme
+    return f"{request.path}?{urlencode(args)}"
+
+
+@app.context_processor
+def inject_theme_context():
+    theme = get_current_theme()
+    pygments_style = "github-light" if theme == "light" else "github-dark"
+    theme_toggle_label = (
+        "Switch to Dark Theme" if theme == "light" else "Switch to Light Theme"
+    )
+    return {
+        "theme": theme,
+        "pygments_style": pygments_style,
+        "theme_toggle_label": theme_toggle_label,
+        "theme_toggle_url": get_theme_toggle_url(theme),
+    }
+
+
+@app.after_request
+def persist_theme_cookie(response):
+    theme = get_current_theme()
+    response.set_cookie(
+        THEME_COOKIE,
+        theme,
+        max_age=COOKIE_MAX_AGE,
+        samesite="Lax",
+    )
+    return response
+
+
+@app.route("/set_theme/<theme_name>")
+@app.route("/set_theme")
+def set_theme(theme_name: str = ""):
+    chosen = (theme_name or request.args.get("theme", "")).strip().lower()
+    if chosen not in ("light", "dark"):
+        chosen = DEFAULT_THEME
+    next_url = request.args.get("next") or request.referrer or url_for("index")
+    response = make_response(redirect(next_url))
+    response.set_cookie(
+        THEME_COOKIE,
+        chosen,
+        max_age=COOKIE_MAX_AGE,
+        samesite="Lax",
+    )
+    return response
 
 
 def get_history_from_cookie(cookie_name: str) -> list[str]:
@@ -78,8 +152,9 @@ def view_file():
     if not path_param:
         abort(400, "Missing path parameter 'p'")
 
-    processor = FileProcessor(path_param)
-    data = processor.get_file_data()
+    theme = get_current_theme()
+    processor = FileProcessor(path_param, theme=theme)
+    data = processor.get_file_data(theme=theme)
 
     clean_p = path_param.replace("\\", "/").strip("/")
     parent_dir = "/".join(clean_p.split("/")[:-1]) if "/" in clean_p else ""

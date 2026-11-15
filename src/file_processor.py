@@ -20,8 +20,9 @@ class FileData(TypedDict):
 
 
 class FileProcessor(PathValidator):
-    def __init__(self, rel_path: str) -> None:
+    def __init__(self, rel_path: str, theme: str = "dark") -> None:
         self.rel_path = rel_path
+        self.theme = theme if theme in ("light", "dark") else "dark"
         self.abs_path: Path = self.safe_path(rel_path)
 
         if not self.abs_path.exists():
@@ -79,12 +80,14 @@ class FileProcessor(PathValidator):
             case _:
                 return "plaintext"
 
-    def get_file_data(self) -> FileData:
+    def get_file_data(self, theme: str | None = None) -> FileData:
         try:
+            active_theme = theme if theme in ("light", "dark") else self.theme
+            style = "github-light" if active_theme == "light" else "github-dark"
             content = self.abs_path.read_text(encoding="utf-8", errors="replace")
             lang = self._detect_language()
             highlighted_content, pygments_css = highlight_code(
-                content, filename=self.abs_path.name, lang=lang
+                content, filename=self.abs_path.name, lang=lang, style=style
             )
 
             return {

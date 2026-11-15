@@ -314,6 +314,85 @@ class TestSearchAndNavigation(unittest.TestCase):
         self.assertEqual(res.text.count('<option value="term3">term3</option>'), 1)
         self.assertEqual(res.text.count('<option value="path3">path3</option>'), 1)
 
+    def test_default_dark_theme_and_switch_link_on_all_pages(self):
+        pages = [
+            "/opendir",
+            "/openfile?p=cli/main_cli.cpp",
+            "/search_query",
+            "/search_results",
+        ]
+        for url in pages:
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 200)
+            self.assertIn('data-theme="dark"', res.text)
+            self.assertIn("Switch to Light Theme", res.text)
+            self.assertNotIn("Switch to Dark Theme", res.text)
+            # Verify link appears to the right of File Browser in top-nav
+            top_nav = res.text.split('<div class="top-nav">', 1)[1].split("</div>", 1)[0]
+            self.assertLess(
+                top_nav.index("File Browser"),
+                top_nav.index("Switch to Light Theme"),
+            )
+
+    def test_theme_switching_and_cookie_persistence_across_pages(self):
+        # Default is dark; switch to light via the toggle link on /opendir
+        res = self.client.get("/opendir?theme=light")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('data-theme="light"', res.text)
+        self.assertIn("Switch to Dark Theme", res.text)
+        self.assertNotIn("Switch to Light Theme", res.text)
+        self.assertIn("background-color: #ffffff", res.text)
+
+        # Subsequent requests without ?theme= should remember light theme via cookie
+        for url in ("/opendir", "/search_query", "/search_results", "/openfile?p=cli/main_cli.cpp"):
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 200)
+            self.assertIn('data-theme="light"', res.text)
+            self.assertIn("Switch to Dark Theme", res.text)
+            self.assertIn("background-color: #ffffff", res.text)
+
+        # Switch back to dark theme
+        res = self.client.get("/search_query?theme=dark")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('data-theme="dark"', res.text)
+        self.assertIn("Switch to Light Theme", res.text)
+        self.assertIn("background-color: #0d1117", res.text)
+
+        # Verify dark theme is remembered on subsequent requests
+        res = self.client.get("/opendir")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('data-theme="dark"', res.text)
+        self.assertIn("Switch to Light Theme", res.text)
+
+    def test_pygments_github_dark_and_github_light_themes(self):
+        # Dark theme (default) uses github-dark
+        res_dark = self.client.get("/openfile?p=cli/main_cli.cpp")
+        self.assertEqual(res_dark.status_code, 200)
+        self.assertIn("/* Pygments style: github-dark */", res_dark.text)
+        self.assertIn(".highlight { background: #0d1117;", res_dark.text)
+
+        # Light theme uses github-light
+        res_light = self.client.get("/openfile?p=cli/main_cli.cpp&theme=light")
+        self.assertEqual(res_light.status_code, 200)
+        self.assertIn("/* Pygments style: github-light */", res_light.text)
+        self.assertIn(".highlight { background: #ffffff;", res_light.text)
+
+    def test_footer_on_all_pages(self):
+        pages = [
+            "/opendir",
+            "/openfile?p=cli/main_cli.cpp",
+            "/search_query",
+            "/search_results",
+        ]
+        expected_link = '<a href="https://github.com/ruben2020/codequery-web">codequery-web</a>'
+        for url in pages:
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 200)
+            self.assertIn("Powered by ", res.text)
+            self.assertIn(expected_link, res.text)
+            self.assertIn(f"Powered by {expected_link}", res.text)
+            self.assertIn("text-align: center;", res.text)
+
 
 if __name__ == "__main__":
     unittest.main()

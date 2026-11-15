@@ -6,6 +6,7 @@
 
 import urllib.parse
 from typing import Tuple
+import pygments.styles
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import (
@@ -13,8 +14,91 @@ from pygments.lexers import (
     get_lexer_by_name,
     get_lexer_for_filename,
 )
-from pygments.token import Token
+from pygments.style import Style
+from pygments.styles._mapping import STYLES
+from pygments.token import (
+    Comment,
+    Error,
+    Generic,
+    Keyword,
+    Literal,
+    Name,
+    Number,
+    Operator,
+    String,
+    Text,
+    Token,
+)
 from pygments.util import ClassNotFound
+
+
+class GhLightStyle(Style):
+    """
+    GitHub's Light-Colorscheme based theme for Pygments.
+    """
+
+    name = "github-light"
+
+    background_color = "#ffffff"
+    highlight_color = "#fff8c5"
+
+    line_number_special_color = "#1f2328"
+    line_number_special_background_color = "#fff8c5"
+
+    line_number_color = "#6e7781"
+    line_number_background_color = "#ffffff"
+
+    styles = {
+        Token: "#1f2328",
+        Error: "#cf222e",
+        Keyword: "#cf222e",
+        Keyword.Constant: "#0550ae",
+        Keyword.Pseudo: "#0550ae",
+        Name: "#1f2328",
+        Name.Class: "bold #953800",
+        Name.Constant: "bold #0550ae",
+        Name.Decorator: "bold #8250df",
+        Name.Entity: "#953800",
+        Name.Exception: "bold #953800",
+        Name.Function: "bold #8250df",
+        Name.Label: "bold #0550ae",
+        Name.Namespace: "#cf222e",
+        Name.Property: "#0550ae",
+        Name.Tag: "#116329",
+        Name.Variable: "#0550ae",
+        Literal: "#0a3069",
+        Literal.Date: "#0550ae",
+        String: "#0a3069",
+        String.Affix: "#0550ae",
+        String.Delimiter: "#0550ae",
+        String.Escape: "#0550ae",
+        String.Heredoc: "#0550ae",
+        String.Regex: "#0550ae",
+        Number: "#0550ae",
+        Comment: "italic #57606a",
+        Comment.Preproc: "bold #57606a",
+        Comment.Special: "bold italic #57606a",
+        Operator: "bold #cf222e",
+        Generic: "#1f2328",
+        Generic.Deleted: "bg:#ffebe9 #82071e",
+        Generic.Emph: "italic",
+        Generic.Error: "#82071e",
+        Generic.Heading: "bold #0550ae",
+        Generic.Inserted: "bg:#dafbe1 #116329",
+        Generic.Output: "#57606a",
+        Generic.Prompt: "#57606a",
+        Generic.Strong: "bold",
+        Generic.EmphStrong: "bold italic",
+        Generic.Subheading: "#0550ae",
+        Generic.Traceback: "#cf222e",
+        Generic.Underline: "underline",
+        Text.Whitespace: "#6e7781",
+    }
+
+
+STYLES["GhLightStyle"] = (__name__, "github-light", ())
+pygments.styles.STYLE_MAP["github-light"] = f"{__name__.split('.')[-1]}::GhLightStyle"
+pygments.styles._STYLE_NAME_TO_MODULE_MAP["github-light"] = (__name__, "GhLightStyle")
 
 
 class SymbolSearchHtmlFormatter(HtmlFormatter):
@@ -117,7 +201,7 @@ def highlight_code(
     content: str,
     filename: str,
     lang: str = "",
-    style: str = "rrt",
+    style: str = "github-dark",
     search_url_prefix: str = "/search_results?search_term=",
 ) -> Tuple[str, str]:
     """
@@ -133,5 +217,5 @@ def highlight_code(
         style=style,
     )
     highlighted_html = highlight(content, lexer, formatter)
-    pygments_css = formatter.get_style_defs(".highlight")
+    pygments_css = f"/* Pygments style: {style} */\n" + formatter.get_style_defs(".highlight")
     return highlighted_html, pygments_css

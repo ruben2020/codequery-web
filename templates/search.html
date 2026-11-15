@@ -10,11 +10,32 @@ SPDX-License-Identifier: MIT
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search: {{ term }}</title>
     <style>
+        {% if theme == 'light' %}
         body {
             font-family: sans-serif;
             margin: 40px;
-            background-color: #2d2d2d;
-            color: #fff;
+            background-color: #ffffff;
+            color: #1f2328;
+        }
+        .top-nav {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #d0d7de;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .top-nav a {
+            color: #0969da;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .top-nav a:hover {
+            color: #0550ae;
+            text-decoration: underline;
+        }
+        .nav-sep {
+            color: #8c959f;
         }
         .header {
             display: flex;
@@ -23,46 +44,142 @@ SPDX-License-Identifier: MIT
             margin-bottom: 20px;
         }
         h1, h2 {
-            color: #f9f9f9;
+            color: #1f2328;
         }
         a {
-            color: #4da6ff;
+            color: #0969da;
             text-decoration: none;
         }
         a:hover {
             text-decoration: underline;
-            color: #fff;
+            color: #0550ae;
         }
         .back-link {
-            color: #4da6ff;
+            color: #0969da;
             font-size: 1rem;
         }
         .search-box {
-            background-color: #383838;
+            background-color: #f6f8fa;
             padding: 24px;
             border-radius: 6px;
-            border: 1px solid #444;
+            border: 1px solid #d0d7de;
             margin-top: 20px;
         }
         .term-highlight {
-            color: #4da6ff;
+            color: #0969da;
             font-family: monospace;
             font-size: 1.25rem;
-            background-color: #222;
+            background-color: #ffffff;
             padding: 3px 8px;
             border-radius: 4px;
         }
         .desc {
-            color: #ccc;
+            color: #57606a;
             margin-top: 15px;
             font-size: 1.05rem;
         }
         .nav-links {
             margin-top: 25px;
         }
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #d0d7de;
+            font-size: small;
+            color: #57606a;
+            text-align: center;
+        }
+        {% else %}
+        body {
+            font-family: sans-serif;
+            margin: 40px;
+            background-color: #0d1117;
+            color: #e6edf3;
+        }
+        .top-nav {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .top-nav a {
+            color: #58a6ff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .top-nav a:hover {
+            color: #79c0ff;
+            text-decoration: underline;
+        }
+        .nav-sep {
+            color: #6e7681;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #f0f6fc;
+        }
+        a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #79c0ff;
+        }
+        .back-link {
+            color: #58a6ff;
+            font-size: 1rem;
+        }
+        .search-box {
+            background-color: #161b22;
+            padding: 24px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+            margin-top: 20px;
+        }
+        .term-highlight {
+            color: #58a6ff;
+            font-family: monospace;
+            font-size: 1.25rem;
+            background-color: #0d1117;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .desc {
+            color: #8b949e;
+            margin-top: 15px;
+            font-size: 1.05rem;
+        }
+        .nav-links {
+            margin-top: 25px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #30363d;
+            font-size: small;
+            color: #8b949e;
+            text-align: center;
+        }
+        {% endif %}
     </style>
 </head>
-<body>
+<body class="{{ 'light-theme' if theme == 'light' else 'dark-theme' }}" data-theme="{{ theme }}">
+
+    <div class="top-nav">
+        <a href="{{ url_for('search_query') }}">Search Query</a>
+        <span class="nav-sep">|</span>
+        <a href="{{ url_for('browse_directory') }}">📁 File Browser</a>
+        <span class="nav-sep">|</span>
+        <a href="{{ theme_toggle_url }}">{{ theme_toggle_label }}</a>
+    </div>
 
     <div class="header">
         <h2>Search Results</h2>
@@ -81,6 +198,10 @@ SPDX-License-Identifier: MIT
             <a href="{{ url_for('browse_directory') }}">&larr; Return to File Browser</a>
         </div>
     </div>
+
+    <footer class="footer">
+        <small>Powered by <a href="https://github.com/ruben2020/codequery-web">codequery-web</a></small>
+    </footer>
 
 </body>
 </html>
