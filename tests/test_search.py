@@ -381,6 +381,7 @@ class TestSearchAndNavigation(unittest.TestCase):
         pages = [
             "/opendir",
             "/openfile?p=cli/main_cli.cpp",
+            "/file_git_history?p=cli/main_cli.cpp",
             "/search_query",
             "/search_results",
         ]
@@ -392,6 +393,77 @@ class TestSearchAndNavigation(unittest.TestCase):
             self.assertIn(expected_link, res.text)
             self.assertIn(f"Powered by {expected_link}", res.text)
             self.assertIn("text-align: center;", res.text)
+
+    def test_file_git_history_link_in_file_contents_page(self):
+        # Dark theme (default)
+        res_dark = self.client.get("/openfile?p=cli/main_cli.cpp")
+        self.assertEqual(res_dark.status_code, 200)
+        self.assertIn("File Git History", res_dark.text)
+        self.assertIn('href="/file_git_history?p=cli/main_cli.cpp"', res_dark.text)
+        top_nav_dark = res_dark.text.split('<div class="top-nav">', 1)[1].split("</div>", 1)[0]
+        self.assertLess(
+            top_nav_dark.index("File Browser"),
+            top_nav_dark.index("File Git History"),
+        )
+        self.assertLess(
+            top_nav_dark.index("File Git History"),
+            top_nav_dark.index("Switch to Light Theme"),
+        )
+
+        # Light theme
+        res_light = self.client.get("/openfile?p=cli/main_cli.cpp&theme=light")
+        self.assertEqual(res_light.status_code, 200)
+        self.assertIn("File Git History", res_light.text)
+        top_nav_light = res_light.text.split('<div class="top-nav">', 1)[1].split("</div>", 1)[0]
+        self.assertLess(
+            top_nav_light.index("File Git History"),
+            top_nav_light.index("Switch to Dark Theme"),
+        )
+
+    def test_file_git_history_page_contents_and_layout(self):
+        res = self.client.get("/file_git_history?p=cli/main_cli.cpp")
+        self.assertEqual(res.status_code, 200)
+
+        # Top navigation links matching file contents page
+        top_nav = res.text.split('<div class="top-nav">', 1)[1].split("</div>", 1)[0]
+        self.assertIn('href="/search_query"', top_nav)
+        self.assertIn("Search Query", top_nav)
+        self.assertIn('href="/opendir"', top_nav)
+        self.assertIn("File Browser", top_nav)
+        self.assertIn('href="/file_git_history?p=cli/main_cli.cpp"', top_nav)
+        self.assertIn("File Git History", top_nav)
+        self.assertIn("Switch to Light Theme", top_nav)
+        self.assertLess(top_nav.index("File Git History"), top_nav.index("Switch to Light Theme"))
+
+        # File path bar matching file contents page
+        self.assertIn('class="folder-bar"', res.text)
+        self.assertIn('class="folder-level">/</a>', res.text)
+        self.assertIn('href="/opendir?p=cli"', res.text)
+        self.assertIn('class="folder-level">cli</a>', res.text)
+        self.assertIn('class="file-level">main_cli.cpp</span>', res.text)
+
+        # Git log output for cli/main_cli.cpp
+        self.assertIn("commit 2e52c716768f2b176837e9ef533ad0eb641c7977", res.text)
+        self.assertIn("Added filter by source path feature to cqsearch CLI", res.text)
+
+        # Powered by footer
+        expected_link = '<a href="https://github.com/ruben2020/codequery-web">codequery-web</a>'
+        self.assertIn(f"Powered by {expected_link}", res.text)
+
+    def test_file_git_history_themes(self):
+        # Default dark theme
+        res_dark = self.client.get("/file_git_history?p=cli/main_cli.cpp")
+        self.assertEqual(res_dark.status_code, 200)
+        self.assertIn('data-theme="dark"', res_dark.text)
+        self.assertIn("Switch to Light Theme", res_dark.text)
+        self.assertIn("background-color: #0d1117", res_dark.text)
+
+        # Switch to light theme
+        res_light = self.client.get("/file_git_history?p=cli/main_cli.cpp&theme=light")
+        self.assertEqual(res_light.status_code, 200)
+        self.assertIn('data-theme="light"', res_light.text)
+        self.assertIn("Switch to Dark Theme", res_light.text)
+        self.assertIn("background-color: #ffffff", res_light.text)
 
 
 if __name__ == "__main__":

@@ -168,6 +168,44 @@ def view_file():
         filename=data["filename"],
         lang=data["lang"],
         current_file=data["filename"],
+        current_path=clean_p,
+        folder_levels=get_folder_breadcrumbs(parent_dir),
+    )
+
+
+@app.route("/git_history/<path:file_path>")
+@app.route("/githistory/<path:file_path>")
+@app.route("/gitlog/<path:file_path>")
+@app.route("/file_git_history/<path:file_path>")
+@app.route("/git_history")
+@app.route("/githistory")
+@app.route("/gitlog")
+@app.route("/file_git_history")
+def file_git_history(file_path: str = ""):
+    path_param = (
+        file_path
+        or request.args.get("p")
+        or request.args.get("path")
+        or request.args.get("file")
+        or ""
+    ).strip()
+    if not path_param:
+        abort(400, "Missing path parameter 'p'")
+
+    theme = get_current_theme()
+    processor = FileProcessor(path_param, theme=theme)
+    git_log = processor.get_git_history()
+
+    clean_p = path_param.replace("\\", "/").strip("/")
+    parent_dir = "/".join(clean_p.split("/")[:-1]) if "/" in clean_p else ""
+
+    return render_template(
+        "file_git_history.html",
+        git_log=git_log,
+        content=git_log,
+        filename=processor.abs_path.name,
+        current_file=processor.abs_path.name,
+        current_path=clean_p,
         folder_levels=get_folder_breadcrumbs(parent_dir),
     )
 

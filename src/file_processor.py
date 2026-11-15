@@ -5,9 +5,10 @@
 #
 
 from pathlib import Path
+import subprocess
 from typing import TypedDict
 from flask import abort
-from .validator import PathValidator
+from .validator import PathValidator, get_base_dir
 from .highlighter import highlight_code, SymbolSearchHtmlFormatter
 
 
@@ -99,3 +100,27 @@ class FileProcessor(PathValidator):
             }
         except Exception as e:
             abort(500, f"Error reading file: {str(e)}")
+
+    def get_git_history(self) -> str:
+        base_dir = get_base_dir()
+        try:
+            rel_file = self.abs_path.relative_to(base_dir).as_posix()
+        except ValueError:
+            rel_file = self.rel_path.replace("\\", "/").lstrip("/")
+
+        cmd = ["git", "log", "--", rel_file]
+        try:
+            res = subprocess.run(
+                cmd,
+                cwd=str(base_dir),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            if res.returncode == 0:
+                return res.stdout
+            return res.stdout or res.stderr
+        except Exception as e:
+            abort(500, f"Error running git log: {str(e)}")

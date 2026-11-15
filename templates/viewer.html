@@ -315,6 +315,8 @@ SPDX-License-Identifier: MIT
         <span class="nav-sep">|</span>
         <a href="{{ url_for('browse_directory') }}">📁 File Browser</a>
         <span class="nav-sep">|</span>
+        <a href="{{ url_for('file_git_history', p=current_path) }}">File Git History</a>
+        <span class="nav-sep">|</span>
         <a href="{{ theme_toggle_url }}">{{ theme_toggle_label }}</a>
     </div>
 
