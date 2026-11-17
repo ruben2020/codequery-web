@@ -32,10 +32,21 @@ def get_folder_breadcrumbs(rel_path: str) -> list[dict[str, str]]:
     return breadcrumbs
 
 
+HIDDEN_FOLDERS = {".git", ".vscode"}
+
+
 class DirectoryProcessor(PathValidator):
     def __init__(self, rel_path: str) -> None:
         self.rel_path = rel_path
         self.abs_path: Path = self.safe_path(rel_path)
+
+        base_dir = get_base_dir()
+        try:
+            rel_parts = self.abs_path.relative_to(base_dir).parts
+        except ValueError:
+            rel_parts = ()
+        if any(part in HIDDEN_FOLDERS for part in rel_parts):
+            abort(404)
 
         if not self.abs_path.exists():
             abort(404)
@@ -47,6 +58,8 @@ class DirectoryProcessor(PathValidator):
         base_dir = get_base_dir()
 
         for item in self.abs_path.iterdir():
+            if item.is_dir() and item.name in HIDDEN_FOLDERS:
+                continue
             rel_item = item.relative_to(base_dir)
 
             items.append(

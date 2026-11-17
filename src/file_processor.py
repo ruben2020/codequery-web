@@ -81,6 +81,13 @@ class FileProcessor(PathValidator):
             case _:
                 return "plaintext"
 
+    def get_raw_content(self) -> str:
+        try:
+            with open(self.abs_path, "r", encoding="utf-8", errors="replace", newline="") as f:
+                return f.read()
+        except Exception as e:
+            abort(500, f"Error reading file: {str(e)}")
+
     def get_file_data(self, theme: str | None = None) -> FileData:
         try:
             active_theme = theme if theme in ("light", "dark") else self.theme

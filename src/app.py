@@ -5,9 +5,10 @@
 #
 
 import json
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlencode, unquote
-from flask import Flask, abort, make_response, redirect, render_template, request, url_for
+from flask import Flask, Response, abort, make_response, redirect, render_template, request, url_for
 from .directory_processor import DirectoryProcessor, get_folder_breadcrumbs
 from .file_processor import FileProcessor
 from .search_processor import SearchProcessor
@@ -55,6 +56,17 @@ def get_theme_toggle_url(current_theme: str) -> str:
     return f"{request.path}?{urlencode(args)}"
 
 
+def get_db_last_indexed() -> str:
+    db_path = get_base_dir() / ".vscode" / "codequery" / "cq.db"
+    try:
+        if db_path.exists():
+            mtime = db_path.stat().st_mtime
+            return datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        pass
+    return "N/A"
+
+
 @app.context_processor
 def inject_theme_context():
     theme = get_current_theme()
@@ -67,6 +79,7 @@ def inject_theme_context():
         "pygments_style": pygments_style,
         "theme_toggle_label": theme_toggle_label,
         "theme_toggle_url": get_theme_toggle_url(theme),
+        "last_indexed": get_db_last_indexed(),
     }
 
 
@@ -152,6 +165,9 @@ def view_file():
     if not path_param:
         abort(400, "Missing path parameter 'p'")
 
+    if request.args.get("raw", "").strip().lower() in ("1", "true", "yes"):
+        return raw_file(path_param)
+
     theme = get_current_theme()
     processor = FileProcessor(path_param, theme=theme)
     data = processor.get_file_data(theme=theme)
@@ -171,6 +187,28 @@ def view_file():
         current_path=clean_p,
         folder_levels=get_folder_breadcrumbs(parent_dir),
     )
+
+
+@app.route("/rawfile/<path:file_path>")
+@app.route("/raw_file/<path:file_path>")
+@app.route("/raw/<path:file_path>")
+@app.route("/rawfile")
+@app.route("/raw_file")
+@app.route("/raw")
+def raw_file(file_path: str = ""):
+    path_param = (
+        file_path
+        or request.args.get("p")
+        or request.args.get("path")
+        or request.args.get("file")
+        or ""
+    ).strip()
+    if not path_param:
+        abort(400, "Missing path parameter 'p'")
+
+    processor = FileProcessor(path_param)
+    raw_text = processor.get_raw_content()
+    return Response(raw_text, mimetype="text/plain; charset=utf-8")
 
 
 @app.route("/git_history/<path:file_path>")

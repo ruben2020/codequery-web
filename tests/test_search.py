@@ -465,6 +465,77 @@ class TestSearchAndNavigation(unittest.TestCase):
         self.assertIn("Switch to Dark Theme", res_light.text)
         self.assertIn("background-color: #ffffff", res_light.text)
 
+    def test_footer_last_indexed_on_all_pages(self):
+        from src.app import get_db_last_indexed
+        expected_ts = get_db_last_indexed()
+        self.assertNotEqual(expected_ts, "N/A")
+        pages = [
+            "/opendir",
+            "/openfile?p=cli/main_cli.cpp",
+            "/file_git_history?p=cli/main_cli.cpp",
+            "/search_query",
+            "/search_results",
+        ]
+        for url in pages:
+            for theme_param in ("", "&theme=light" if "?" in url else "?theme=light"):
+                res = self.client.get(url + theme_param)
+                self.assertEqual(res.status_code, 200)
+                self.assertIn(f"Last indexed on {expected_ts}", res.text)
+                footer = res.text.split('<footer class="footer">', 1)[1].split("</footer>", 1)[0]
+                self.assertLess(
+                    footer.index("Powered by"),
+                    footer.index(f"Last indexed on {expected_ts}"),
+                )
+
+    def test_raw_link_and_endpoint(self):
+        # Check Raw link on viewer page in dark and light themes
+        for theme_query, switch_label in (("", "Switch to Light Theme"), ("&theme=light", "Switch to Dark Theme")):
+            res = self.client.get(f"/openfile?p=cli/main_cli.cpp{theme_query}")
+            self.assertEqual(res.status_code, 200)
+            top_nav = res.text.split('<div class="top-nav">', 1)[1].split("</div>", 1)[0]
+            self.assertIn('href="/raw?p=cli/main_cli.cpp"', top_nav)
+            self.assertIn(">Raw<", top_nav)
+            self.assertLess(top_nav.index("File Git History"), top_nav.index(">Raw<"))
+            self.assertLess(top_nav.index(">Raw<"), top_nav.index(switch_label))
+
+        # Check Raw endpoint returns verbatim plaintext
+        res_raw = self.client.get("/raw?p=cli/main_cli.cpp")
+        self.assertEqual(res_raw.status_code, 200)
+        self.assertIn("text/plain", res_raw.content_type)
+        expected_file = get_base_dir() / "cli" / "main_cli.cpp"
+        with open(expected_file, "r", encoding="utf-8", errors="replace", newline="") as f:
+            expected_content = f.read()
+        self.assertEqual(res_raw.text, expected_content)
+        self.assertNotIn("<!DOCTYPE html>", res_raw.text)
+
+    def test_top_nav_separators_on_all_pages(self):
+        pages = [
+            "/opendir",
+            "/openfile?p=cli/main_cli.cpp",
+            "/file_git_history?p=cli/main_cli.cpp",
+            "/search_query",
+            "/search_results",
+        ]
+        for url in pages:
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 200)
+            top_nav = res.text.split('<div class="top-nav">', 1)[1].split("</div>", 1)[0]
+            self.assertIn('<span class="nav-sep">&bull;</span>', top_nav)
+
+    def test_hidden_git_and_vscode_folders_in_file_browser(self):
+        res = self.client.get("/opendir")
+        self.assertEqual(res.status_code, 200)
+        self.assertNotIn("<strong>.git/</strong>", res.text)
+        self.assertNotIn('href="/opendir?p=.git"', res.text)
+        self.assertNotIn("<strong>.vscode/</strong>", res.text)
+        self.assertNotIn('href="/opendir?p=.vscode"', res.text)
+        self.assertIn("cli/", res.text)
+
+        # Direct access to .git or .vscode in File Browser returns 404
+        for hidden in (".git", ".vscode", ".vscode/codequery"):
+            res_hidden = self.client.get(f"/opendir?p={hidden}")
+            self.assertEqual(res_hidden.status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -180,7 +180,7 @@ SPDX-License-Identifier: MIT
             margin-top: 40px;
             padding-top: 15px;
             border-top: 1px solid #d0d7de;
-            font-size: small;
+            font-size: 0.9rem;
             color: #57606a;
             text-align: center;
         }
@@ -354,7 +354,7 @@ SPDX-License-Identifier: MIT
             margin-top: 40px;
             padding-top: 15px;
             border-top: 1px solid #30363d;
-            font-size: small;
+            font-size: 0.9rem;
             color: #8b949e;
             text-align: center;
         }
@@ -365,9 +365,9 @@ SPDX-License-Identifier: MIT
 
     <div class="top-nav">
         <a href="{{ url_for('search_query') }}">Search Query</a>
-        <span class="nav-sep">|</span>
+        <span class="nav-sep">&bull;</span>
         <a href="{{ url_for('browse_directory') }}">📁 File Browser</a>
-        <span class="nav-sep">|</span>
+        <span class="nav-sep">&bull;</span>
         <a href="{{ theme_toggle_url }}">{{ theme_toggle_label }}</a>
     </div>
 
@@ -410,7 +410,8 @@ SPDX-License-Identifier: MIT
     </div>
 
     <footer class="footer">
-        <small>Powered by <a href="https://github.com/ruben2020/codequery-web">codequery-web</a></small>
+        <div>Powered by <a href="https://github.com/ruben2020/codequery-web">codequery-web</a></div>
+        <div>Last indexed on {{ last_indexed }}</div>
     </footer>
 
 </body>
