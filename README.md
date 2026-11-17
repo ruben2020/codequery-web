@@ -58,42 +58,99 @@ If you have installed CodeQuery correctly, `cqsearch` should be accessible on a 
 
 ## How do I prepare my source code for use with this software?
 
-The software looks for the target source code and the CodeQuery database file (`cq.db`) inside the `share/` folder by default (or any custom folder provided via the command-line argument when starting `wsgi.py`).
+Let's assume that the base folder of your source code is `[project_base_path]`.
+
+The extension will look for the CodeQuery database in `[project_base_path]/.vscode/codequery/cq.db` exactly.
+
+The CodeQuery database can be rebuilt by the extension using either a Bash script in `{project_base_path}/.vscode/codequery/rebuild.sh` or a Windows batch file in `{project_base_path}/.vscode/codequery/rebuild.bat`.
+
+The Bash script or Windows batch file can be called manually or through the codequery4vscode Visual Studio Code extension. It's meant to be executed when the current working directory is `[project_base_path]`
 
 Let me provide an example here on how to prepare the source code of CodeQuery itself.
 
 In Linux or Mac, follow these steps for C/C++ source code:
 
 ```bash
-cd ~/repo/codequery-web
-mkdir -p share
-cd share
-git clone https://github.com/ruben2020/codequery.git .
+cd ~/repo
+git clone https://github.com/ruben2020/codequery.git
+cd codequery
+mkdir -p .vscode/codequery
 ```
 
-Then generate the cscope and ctags databases, and combine them into `cq.db`:
+Here, `[project_base_path]` is `~/repo/codequery`.
+
+Then create the script `~/repo/codequery/.vscode/codequery/rebuild.sh` with these contents using vim, gedit or your favorite editor:
 
 ```bash
-find . -iname "*.h" -o -iname "*.hpp" -o -iname "*.hxx" -o -iname "*.hh" -o -iname "*.c" -o -iname "*.cpp" -o -iname "*.cxx" -o -iname "*.cc" > cscope.files
-cscope -cb -i cscope.files -f cscope.out
-ctags --fields=+i -n -L cscope.files -f tags
+#!/bin/bash
+rm -f .vscode/codequery/cscope.out
+rm -f .vscode/codequery/tags
+find . -iname "*.h"    > .vscode/codequery/cscope.files
+find . -iname "*.hpp" >> .vscode/codequery/cscope.files
+find . -iname "*.hxx" >> .vscode/codequery/cscope.files
+find . -iname "*.hh"  >> .vscode/codequery/cscope.files
+find . -iname "*.c"   >> .vscode/codequery/cscope.files
+find . -iname "*.cpp" >> .vscode/codequery/cscope.files
+find . -iname "*.cxx" >> .vscode/codequery/cscope.files
+find . -iname "*.cc"  >> .vscode/codequery/cscope.files
+cscope -cb -i .vscode/codequery/cscope.files -f .vscode/codequery/cscope.out
+ctags --fields=+i -n -L .vscode/codequery/cscope.files -f .vscode/codequery/tags
+cd .vscode/codequery
 cqmakedb -s cq.db -c cscope.out -t tags -p -d
+```
+
+And then make it executable:
+
+```bash
+chmod +x ~/repo/codequery/.vscode/codequery/rebuild.sh
+```
+
+You can test the script by calling:
+
+```bash
+cd ~/repo/codequery/
+./.vscode/codequery/rebuild.sh
 ```
 
 In Windows, follow these steps for C/C++ source code:
 
-```cmd
-cd codequery-web
-md share
-cd share
-git clone https://github.com/ruben2020/codequery.git .
-dir /b/a/s *.h *.hpp *.hxx *.hh *.c *.cpp *.cxx *.cc > cscope.files
-cscope -cb -i cscope.files -f cscope.out
-ctags --fields=+i -n -L cscope.files -f tags
+```bash
+cd c:\repo
+git clone https://github.com/ruben2020/codequery.git
+cd codequery
+md .vscode
+md .vscode\codequery
+```
+
+Then create the Windows batch file `c:\repo\codequery\.vscode\codequery\rebuild.bat` with these contents using Notepad or your favorite editor:
+
+```bash
+del /Q /F .vscode\codequery\cscope.out
+del /Q /F .vscode\codequery\tags
+dir /b/a/s *.h    > .vscode\codequery\cscope.files
+dir /b/a/s *.hpp >> .vscode\codequery\cscope.files
+dir /b/a/s *.hxx >> .vscode\codequery\cscope.files
+dir /b/a/s *.hh  >> .vscode\codequery\cscope.files
+dir /b/a/s *.c   >> .vscode\codequery\cscope.files
+dir /b/a/s *.cpp >> .vscode\codequery\cscope.files
+dir /b/a/s *.cxx >> .vscode\codequery\cscope.files
+dir /b/a/s *.cc  >> .vscode\codequery\cscope.files
+cscope -cb -i .vscode\codequery\cscope.files -f .vscode\codequery\cscope.out
+ctags --fields=+i -n -L .vscode\codequery\cscope.files -f .vscode\codequery\tags
+cd .vscode\codequery
 cqmakedb -s cq.db -c cscope.out -t tags -p -d
 ```
 
-Please replace the file patterns above with `*.java`, `*.py`, `*.rb`, `*.go` and `*.js` respectively for Java, Python, Ruby, Go, and other supported languages. Details can be found on the [CodeQuery](https://github.com/ruben2020/codequery) project page.
+You can test the Windows batch file by calling the following on a command terminal window:
+
+```bash
+cd c:\repo\codequery
+.vscode\codequery\rebuild.bat
+```
+
+Please replace the wildcard expressions above with *.java, *.py, *.rb, *.go and *.js respectively for Java, Python, Ruby, Go and Javascript. Details can be found on the [CodeQuery](https://github.com/ruben2020/codequery) page.
+
+You may also want to add `.vscode` to the `.gitignore` file on the base folder of your source code.
 
 
 ## How do I run codequery-web?

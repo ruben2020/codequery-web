@@ -66,7 +66,7 @@ class SearchProcessor:
         cmd = [
             cqsearch_bin,
             "-s",
-            "cq.db",
+            "./.vscode/codequery/cq.db",
             "-t",
             self.search_term,
             "-p",
