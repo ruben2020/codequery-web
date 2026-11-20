@@ -11,6 +11,7 @@ from src.app import app
 from src.search_processor import SearchProcessor, resolve_relative_path
 from src.directory_processor import get_folder_breadcrumbs
 from src.file_processor import FileProcessor
+from src.highlighter import highlight_code
 from src.validator import get_base_dir, set_base_dir
 from wsgi import parse_args
 
@@ -535,6 +536,107 @@ class TestSearchAndNavigation(unittest.TestCase):
         for hidden in (".git", ".vscode", ".vscode/codequery"):
             res_hidden = self.client.get(f"/opendir?p={hidden}")
             self.assertEqual(res_hidden.status_code, 404)
+
+    def test_c_and_cpp_include_header_hyperlinks_search_type_4(self):
+        # C++ source file (.cpp)
+        res_cpp = self.client.get("/openfile?p=cli/main_cli.cpp")
+        self.assertEqual(res_cpp.status_code, 200)
+        self.assertIn(
+            '&lt;<a href="/search_results?search_term=stdio.h&search_type=4" class="symbol-link">stdio.h</a>&gt;',
+            res_cpp.text,
+        )
+        self.assertIn(
+            '&lt;<a href="/search_results?search_term=memory&search_type=4" class="symbol-link">memory</a>&gt;',
+            res_cpp.text,
+        )
+        self.assertIn(
+            '"<a href="/search_results?search_term=sqlquery.h&search_type=4" class="symbol-link">sqlquery.h</a>"',
+            res_cpp.text,
+        )
+
+        # C++ header file (.h -> detected as cpp)
+        res_h = self.client.get("/openfile?p=gui/fileviewer.h")
+        self.assertEqual(res_h.status_code, 200)
+        self.assertIn(
+            '&lt;<a href="/search_results?search_term=QtGlobal&search_type=4" class="symbol-link">QtGlobal</a>&gt;',
+            res_h.text,
+        )
+        self.assertIn(
+            '"<a href="/search_results?search_term=sqlquery.h&search_type=4" class="symbol-link">sqlquery.h</a>"',
+            res_h.text,
+        )
+
+        # C source file (.c -> detected as c)
+        res_c = self.client.get("/openfile?p=lexilla/examples/CheckLexilla/CheckLexilla.c")
+        self.assertEqual(res_c.status_code, 200)
+        self.assertIn(
+            '&lt;<a href="/search_results?search_term=stdio.h&search_type=4" class="symbol-link">stdio.h</a>&gt;',
+            res_c.text,
+        )
+        self.assertIn(
+            '"<a href="/search_results?search_term=ILexer.h&search_type=4" class="symbol-link">ILexer.h</a>"',
+            res_c.text,
+        )
+        self.assertIn(
+            '"<a href="/search_results?search_term=Lexilla.h&search_type=4" class="symbol-link">Lexilla.h</a>"',
+            res_c.text,
+        )
+
+        # Following the generated GET link executes search type 4
+        res_search = self.client.get("/search_results?search_term=sqlquery.h&search_type=4")
+        self.assertEqual(res_search.status_code, 200)
+        self.assertNotIn("<th>Symbol</th>", res_search.text)
+        self.assertIn("<th>Path</th>", res_search.text)
+        self.assertIn("<th>Preview</th>", res_search.text)
+        self.assertIn("cli/main_cli.cpp", res_search.text)
+
+    def test_c_and_cpp_include_hyperlinks_edge_cases(self):
+        code = (
+            '#include<iostream>\n'
+            '#include"local.h"\n'
+            '#  include   <QtWidgets/QWidget> // trailing comment\n'
+            '#include "../Graph/graph_iface.h"\n'
+            '// #include <commented.h>\n'
+            '#define MACRO "not_a_header.h"\n'
+            'const char* s = "#include \\"in_string.h\\"";\n'
+        )
+        for filename, lang in (("sample.cpp", "cpp"), ("sample.c", "c")):
+            html, _ = highlight_code(code, filename=filename, lang=lang)
+            self.assertIn(
+                '&lt;<a href="/search_results?search_term=iostream&search_type=4" class="symbol-link">iostream</a>&gt;',
+                html,
+            )
+            self.assertIn(
+                '"<a href="/search_results?search_term=local.h&search_type=4" class="symbol-link">local.h</a>"',
+                html,
+            )
+            self.assertIn(
+                '&lt;<a href="/search_results?search_term=QtWidgets%2FQWidget&search_type=4" class="symbol-link">QtWidgets/QWidget</a>&gt;',
+                html,
+            )
+            self.assertIn(
+                '"<a href="/search_results?search_term=..%2FGraph%2Fgraph_iface.h&search_type=4" class="symbol-link">../Graph/graph_iface.h</a>"',
+                html,
+            )
+            # Non-include lines must NOT produce search_type=4 links
+            self.assertNotIn("commented.h&search_type=4", html)
+            self.assertNotIn("not_a_header.h&search_type=4", html)
+            self.assertNotIn("in_string.h&search_type=4", html)
+
+    def test_include_hyperlinks_only_for_c_and_cpp_not_other_languages(self):
+        snippet = '#include <stdio.h>\n#include "sqlquery.h"\n'
+        for filename, lang in (
+            ("sample.py", "python"),
+            ("sample.js", "javascript"),
+            ("sample.go", "go"),
+            ("sample.java", "java"),
+            ("sample.cs", "csharp"),
+            ("README.md", "markdown"),
+            ("CMakeLists.txt", "cmake"),
+            ("notes.txt", "plaintext"),
+        ):
+            html, _ = highlight_code(snippet, filename=filename, lang=lang)
+            self.assertNotIn("search_type=4", html, msg=f"Unexpected type 4 link for {lang}")
 
 
 if __name__ == "__main__":

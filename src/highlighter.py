@@ -14,6 +14,7 @@ from pygments.lexers import (
     get_lexer_by_name,
     get_lexer_for_filename,
 )
+from pygments.lexers.c_cpp import CLexer, CppLexer
 from pygments.style import Style
 from pygments.styles._mapping import STYLES
 from pygments.token import (
@@ -105,15 +106,19 @@ class SymbolSearchHtmlFormatter(HtmlFormatter):
     """
     Pygments HTML Formatter that wraps every symbol (Token.Name and subtypes)
     in a search hyperlink pointing to a search endpoint.
+    When link_includes is enabled (for C/C++), also wraps header filenames
+    inside "" or <> in #include directives in a search type 4 hyperlink.
     """
 
     def __init__(
         self,
         search_url_prefix: str = "/search_results?search_term=",
+        link_includes: bool = False,
         **options,
     ) -> None:
         super().__init__(**options)
         self.search_url_prefix = search_url_prefix
+        self.link_includes = link_includes
 
     def _format_lines(self, tokensource):
         span_openers = self.span_element_openers
@@ -150,6 +155,26 @@ class SymbolSearchHtmlFormatter(HtmlFormatter):
                     url = f"{self.search_url_prefix}{urllib.parse.quote_plus(term)}{sep}search_type=1"
                     parts[0] = f'<a href="{url}" class="symbol-link">{parts[0]}'
                     parts[-1] = parts[-1] + "</a>"
+            elif (
+                self.link_includes
+                and ttype == Comment.PreprocFile
+                and len(value) >= 2
+                and (
+                    (value[0] == '"' and value[-1] == '"')
+                    or (value[0] == "<" and value[-1] == ">")
+                )
+            ):
+                header = value[1:-1]
+                term = header.strip()
+                if term and "\n" not in header:
+                    sep = "&" if "?" in self.search_url_prefix else "?"
+                    url = f"{self.search_url_prefix}{urllib.parse.quote_plus(term)}{sep}search_type=4"
+                    open_delim = translate(value[0])[0]
+                    close_delim = translate(value[-1])[0]
+                    inner_html = translate(header)[0]
+                    parts = [
+                        f'{open_delim}<a href="{url}" class="symbol-link">{inner_html}</a>{close_delim}'
+                    ]
 
             if len(parts) > 1:
                 for part in parts[:-1]:
@@ -209,8 +234,12 @@ def highlight_code(
     Returns (highlighted_html, pygments_css).
     """
     lexer = get_lexer_for_code(filename, content, lang)
+    is_c_or_cpp = lang.lower() in ("c", "cpp", "c++", "cxx") or (
+        not lang and type(lexer) in (CLexer, CppLexer)
+    )
     formatter = SymbolSearchHtmlFormatter(
         search_url_prefix=search_url_prefix,
+        link_includes=is_c_or_cpp,
         linenos="table",
         linespans="line",
         anchorlinenos=True,
